@@ -78,11 +78,3 @@ export const empleadoSchema = z.object({
       .max(1000000, 'El salario no puede superar 1.000.000')
   ),
 });
-
-// Campos que se validan en cada paso del Stepper (mismo orden que los pasos).
-export const camposPorPaso = [
-  ['nombre', 'apellido', 'dni', 'fechaNacimiento'],
-  ['email', 'telefono'],
-  ['departamento', 'fechaIngreso', 'salario'],
-  [],
-];

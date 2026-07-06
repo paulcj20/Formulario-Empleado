@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Card, Alert, Button } from 'react-bootstrap';
-import EmpleadoStepper from './components/EmpleadoStepper';
+import EmpleadoForm from './components/EmpleadoForm';
 
 export default function App() {
   const [creado, setCreado] = useState(null);
@@ -20,7 +20,7 @@ export default function App() {
         </Card>
       ) : (
         <Card body>
-          <EmpleadoStepper onExito={setCreado} />
+          <EmpleadoForm onExito={setCreado} />
         </Card>
       )}
     </Container>
