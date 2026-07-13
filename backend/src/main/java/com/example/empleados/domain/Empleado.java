@@ -31,13 +31,10 @@ public class Empleado {
     @Column(nullable = false, unique = true)
     private String dni;
 
-    @Column(nullable = false)
     private LocalDate fechaNacimiento;
 
-    @Column(nullable = false)
     private LocalDate fechaIngreso;
 
-    @Column(nullable = false)
     private BigDecimal salario;
 
     @Enumerated(EnumType.STRING)
@@ -48,6 +45,16 @@ public class Empleado {
 
     @Column(nullable = false)
     private boolean activo = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoContrato tipoContrato;
+
+    private BigDecimal porcentajeAportes;
+
+    private BigDecimal montoFactura;
+
+    private LocalDate fechaServicio;
 
     public Long getId() {
         return id;
@@ -135,5 +142,37 @@ public class Empleado {
 
     public void setActivo(boolean activo) {
         this.activo = activo;
+    }
+
+    public TipoContrato getTipoContrato() {
+        return tipoContrato;
+    }
+
+    public void setTipoContrato(TipoContrato tipoContrato) {
+        this.tipoContrato = tipoContrato;
+    }
+
+    public BigDecimal getPorcentajeAportes() {
+        return porcentajeAportes;
+    }
+
+    public void setPorcentajeAportes(BigDecimal porcentajeAportes) {
+        this.porcentajeAportes = porcentajeAportes;
+    }
+
+    public BigDecimal getMontoFactura() {
+        return montoFactura;
+    }
+
+    public void setMontoFactura(BigDecimal montoFactura) {
+        this.montoFactura = montoFactura;
+    }
+
+    public LocalDate getFechaServicio() {
+        return fechaServicio;
+    }
+
+    public void setFechaServicio(LocalDate fechaServicio) {
+        this.fechaServicio = fechaServicio;
     }
 }

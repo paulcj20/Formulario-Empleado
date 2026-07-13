@@ -20,6 +20,10 @@ public class EmpleadoMapper {
         empleado.setDepartamento(request.departamento());
         empleado.setTelefono(request.telefono());
         empleado.setActivo(true);
+        empleado.setTipoContrato(request.tipoContrato());
+        empleado.setPorcentajeAportes(request.porcentajeAportes());
+        empleado.setMontoFactura(request.montoFactura());
+        empleado.setFechaServicio(request.fechaServicio());
         return empleado;
     }
 
@@ -35,6 +39,10 @@ public class EmpleadoMapper {
                 empleado.getSalario(),
                 empleado.getDepartamento(),
                 empleado.getTelefono(),
-                empleado.isActivo());
+                empleado.isActivo(),
+                empleado.getTipoContrato(),
+                empleado.getPorcentajeAportes(),
+                empleado.getMontoFactura(),
+                empleado.getFechaServicio());
     }
 }

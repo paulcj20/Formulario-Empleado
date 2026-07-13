@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.empleados.domain.Departamento;
 import com.example.empleados.domain.Empleado;
+import com.example.empleados.domain.TipoContrato;
 import com.example.empleados.dto.EmpleadoRequest;
 import com.example.empleados.dto.EmpleadoResponse;
 import java.math.BigDecimal;
@@ -18,7 +19,8 @@ class EmpleadoMapperTest {
     void toEntityMapeaTodosLosCamposYActivoTrue() {
         EmpleadoRequest request = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
                 "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"), Departamento.IT, "+541112345678");
+                new BigDecimal("150000"), Departamento.IT, "+541112345678",
+                TipoContrato.EMPLEADO, new BigDecimal("17"), null, null);
 
         Empleado entidad = mapper.toEntity(request);
 

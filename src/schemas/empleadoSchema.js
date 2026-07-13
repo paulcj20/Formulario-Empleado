@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const DEPARTAMENTOS = ['VENTAS', 'IT', 'RRHH', 'ADMINISTRACION', 'PRODUCCION'];
+export const TIPOS_CONTRATO = ['EMPLEADO', 'TERCIARIZADO'];
 
 const soloLetras = /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/;
 const dniRegex = /^\d{7,8}$/;
@@ -28,7 +29,10 @@ function noEsFutura(fechaStr) {
   return f.getTime() <= hoy.getTime();
 }
 
-export const empleadoSchema = z.object({
+const numeroDesdeInput = (v) =>
+  v === '' || v === null || v === undefined ? undefined : Number(v);
+
+const camposComunes = {
   nombre: z
     .string()
     .trim()
@@ -45,10 +49,6 @@ export const empleadoSchema = z.object({
     .string()
     .trim()
     .regex(dniRegex, 'El DNI debe tener 7 u 8 dígitos'),
-  fechaNacimiento: z
-    .string()
-    .min(1, 'La fecha de nacimiento es obligatoria')
-    .refine(esMayorDeEdad, 'El empleado debe ser mayor de 18 años'),
   email: z
     .string()
     .trim()
@@ -63,12 +63,21 @@ export const empleadoSchema = z.object({
   departamento: z.enum(DEPARTAMENTOS, {
     errorMap: () => ({ message: 'Seleccione un departamento' }),
   }),
+};
+
+const schemaEmpleado = z.object({
+  ...camposComunes,
+  tipoContrato: z.literal('EMPLEADO'),
+  fechaNacimiento: z
+    .string()
+    .min(1, 'La fecha de nacimiento es obligatoria')
+    .refine(esMayorDeEdad, 'El empleado debe ser mayor de 18 años'),
   fechaIngreso: z
     .string()
     .min(1, 'La fecha de ingreso es obligatoria')
     .refine(noEsFutura, 'La fecha de ingreso no puede ser futura'),
   salario: z.preprocess(
-    (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+    numeroDesdeInput,
     z
       .number({
         required_error: 'El salario es obligatorio',
@@ -77,4 +86,39 @@ export const empleadoSchema = z.object({
       .positive('El salario debe ser positivo')
       .max(1000000, 'El salario no puede superar 1.000.000')
   ),
+  porcentajeAportes: z.preprocess(
+    numeroDesdeInput,
+    z
+      .number({
+        required_error: 'El porcentaje de aportes es obligatorio',
+        invalid_type_error: 'El porcentaje de aportes debe ser un número',
+      })
+      .min(0, 'El porcentaje de aportes debe estar entre 0 y 30')
+      .max(30, 'El porcentaje de aportes debe estar entre 0 y 30')
+  ),
 });
+
+const schemaTerciarizado = z.object({
+  ...camposComunes,
+  tipoContrato: z.literal('TERCIARIZADO'),
+  montoFactura: z.preprocess(
+    numeroDesdeInput,
+    z
+      .number({
+        required_error: 'El monto de factura es obligatorio',
+        invalid_type_error: 'El monto de factura debe ser un número',
+      })
+      .positive('El monto de factura debe ser positivo')
+      .max(1000000, 'El monto de factura no puede superar 1.000.000')
+  ),
+  fechaServicio: z
+    .string()
+    .min(1, 'La fecha de servicio es obligatoria')
+    .refine(noEsFutura, 'La fecha de servicio no puede ser futura'),
+});
+
+export const empleadoSchema = z.discriminatedUnion(
+  'tipoContrato',
+  [schemaEmpleado, schemaTerciarizado],
+  { errorMap: () => ({ message: 'Seleccione un tipo de contrato' }) }
+);

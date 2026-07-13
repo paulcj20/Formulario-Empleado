@@ -46,6 +46,8 @@ class EmpleadoIntegracionTest {
         body.put("salario", 150000);
         body.put("departamento", "IT");
         body.put("telefono", "+541112345678");
+        body.put("tipoContrato", "EMPLEADO");
+        body.put("porcentajeAportes", 17);
         return objectMapper.writeValueAsString(body);
     }
 
@@ -91,5 +93,46 @@ class EmpleadoIntegracionTest {
                         .content(cuerpo("ana.diaz@example.com", "87654321")))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errors.email").value("Ya existe un empleado con ese email"));
+    }
+
+    private java.util.Map<String, Object> cuerpoTerciarizado(String email, String dni) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("nombre", "Luis");
+        body.put("apellido", "Perez");
+        body.put("email", email);
+        body.put("dni", dni);
+        body.put("departamento", "IT");
+        body.put("tipoContrato", "TERCIARIZADO");
+        body.put("montoFactura", 250000);
+        body.put("fechaServicio", "2026-06-30");
+        return body;
+    }
+
+    @Test
+    void altaTerciarizadoValidaDevuelve201() throws Exception {
+        mockMvc.perform(post("/api/empleados")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                cuerpoTerciarizado("luis.perez@example.com", "87654321"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.tipoContrato").value("TERCIARIZADO"))
+                .andExpect(jsonPath("$.montoFactura").value(250000))
+                .andExpect(jsonPath("$.salario").isEmpty());
+
+        assertThat(repository.existsByEmail("luis.perez@example.com")).isTrue();
+    }
+
+    @Test
+    void terciarizadoConSalarioDevuelve400() throws Exception {
+        Map<String, Object> body = cuerpoTerciarizado("luis.perez@example.com", "87654321");
+        body.put("salario", 150000);
+
+        mockMvc.perform(post("/api/empleados")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.salario")
+                        .value("El salario no corresponde a un terciarizado"));
     }
 }

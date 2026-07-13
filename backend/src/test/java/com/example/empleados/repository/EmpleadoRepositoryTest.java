@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.empleados.domain.Departamento;
 import com.example.empleados.domain.Empleado;
+import com.example.empleados.domain.TipoContrato;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,8 @@ class EmpleadoRepositoryTest {
         e.setSalario(new BigDecimal("150000"));
         e.setDepartamento(Departamento.IT);
         e.setTelefono("+541112345678");
+        e.setTipoContrato(TipoContrato.EMPLEADO);
+        e.setPorcentajeAportes(new BigDecimal("17"));
         e.setActivo(true);
         return e;
     }
@@ -52,5 +55,26 @@ class EmpleadoRepositoryTest {
         Empleado guardado = repository.save(nuevoEmpleado());
 
         assertThat(guardado.getId()).isNotNull();
+    }
+
+    @Test
+    void guardaTerciarizadoSinCamposDeEmpleado() {
+        Empleado t = new Empleado();
+        t.setNombre("Luis");
+        t.setApellido("Perez");
+        t.setEmail("luis.perez@example.com");
+        t.setDni("87654321");
+        t.setDepartamento(Departamento.IT);
+        t.setTipoContrato(TipoContrato.TERCIARIZADO);
+        t.setMontoFactura(new BigDecimal("250000"));
+        t.setFechaServicio(LocalDate.of(2026, 6, 30));
+        t.setActivo(true);
+
+        Empleado guardado = repository.save(t);
+
+        assertThat(guardado.getId()).isNotNull();
+        assertThat(guardado.getSalario()).isNull();
+        assertThat(guardado.getFechaNacimiento()).isNull();
+        assertThat(guardado.getTipoContrato()).isEqualTo(TipoContrato.TERCIARIZADO);
     }
 }

@@ -17,8 +17,12 @@ const valoresIniciales = {
   email: '',
   telefono: '',
   departamento: '',
+  tipoContrato: '',
   fechaIngreso: '',
   salario: '',
+  porcentajeAportes: '',
+  montoFactura: '',
+  fechaServicio: '',
 };
 
 export default function EmpleadoForm({ onExito }) {
@@ -29,8 +33,10 @@ export default function EmpleadoForm({ onExito }) {
     resolver: zodResolver(empleadoSchema),
     mode: 'onTouched',
     defaultValues: valoresIniciales,
+    shouldUnregister: true,
   });
-  const { handleSubmit, setError } = methods;
+  const { handleSubmit, setError, watch } = methods;
+  const tipoContrato = watch('tipoContrato');
 
   const onSubmit = async (datos) => {
     setEnviando(true);
@@ -58,13 +64,13 @@ export default function EmpleadoForm({ onExito }) {
         {errorGeneral && <Alert variant="danger">{errorGeneral}</Alert>}
 
         <h5 className="mb-3">Datos personales</h5>
-        <DatosPersonalesStep />
+        <DatosPersonalesStep mostrarFechaNacimiento={tipoContrato === 'EMPLEADO'} />
 
         <h5 className="mt-4 mb-3">Contacto</h5>
         <ContactoStep />
 
         <h5 className="mt-4 mb-3">Datos laborales</h5>
-        <DatosLaboralesStep />
+        <DatosLaboralesStep tipoContrato={tipoContrato} />
 
         <div className="d-flex justify-content-end mt-4">
           <Button type="submit" variant="primary" disabled={enviando}>

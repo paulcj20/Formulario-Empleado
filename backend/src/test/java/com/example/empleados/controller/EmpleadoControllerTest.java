@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.empleados.domain.Departamento;
+import com.example.empleados.domain.TipoContrato;
 import com.example.empleados.dto.EmpleadoResponse;
 import com.example.empleados.exception.EmpleadoDuplicadoException;
 import com.example.empleados.service.EmpleadoService;
@@ -43,6 +44,8 @@ class EmpleadoControllerTest {
         body.put("salario", 150000);
         body.put("departamento", "IT");
         body.put("telefono", "+541112345678");
+        body.put("tipoContrato", "EMPLEADO");
+        body.put("porcentajeAportes", 17);
         return objectMapper.writeValueAsString(body);
     }
 
@@ -51,7 +54,8 @@ class EmpleadoControllerTest {
         EmpleadoResponse response = new EmpleadoResponse(1L, "Ana", "Diaz",
                 "ana.diaz@example.com", "12345678", LocalDate.of(1990, 5, 20),
                 LocalDate.of(2024, 1, 15), new BigDecimal("150000"), Departamento.IT,
-                "+541112345678", true);
+                "+541112345678", true, TipoContrato.EMPLEADO, new BigDecimal("17"),
+                null, null);
         when(service.altaEmpleado(any())).thenReturn(response);
 
         mockMvc.perform(post("/api/empleados")

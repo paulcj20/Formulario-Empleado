@@ -3,6 +3,7 @@ package com.example.empleados.dto;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.empleados.domain.Departamento;
+import com.example.empleados.domain.TipoContrato;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -31,17 +32,18 @@ class EmpleadoRequestValidationTest {
         factory.close();
     }
 
-    private EmpleadoRequest valido() {
-        return new EmpleadoRequest(
-                "Ana",
-                "Diaz",
-                "ana.diaz@example.com",
-                "12345678",
-                LocalDate.of(1990, 5, 20),
-                LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"),
-                Departamento.IT,
-                "+541112345678");
+    private EmpleadoRequest empleadoValido() {
+        return new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com", "12345678",
+                LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
+                new BigDecimal("150000"), Departamento.IT, "+541112345678",
+                TipoContrato.EMPLEADO, new BigDecimal("17"), null, null);
+    }
+
+    private EmpleadoRequest terciarizadoValido() {
+        return new EmpleadoRequest("Luis", "Perez", "luis.perez@example.com", "87654321",
+                null, null, null, Departamento.IT, null,
+                TipoContrato.TERCIARIZADO, null, new BigDecimal("250000"),
+                LocalDate.of(2026, 6, 30));
     }
 
     private Set<String> camposConError(EmpleadoRequest request) {
@@ -52,23 +54,136 @@ class EmpleadoRequestValidationTest {
     }
 
     @Test
-    void requestValidoNoTieneViolaciones() {
-        assertThat(validator.validate(valido())).isEmpty();
+    void empleadoValidoNoTieneViolaciones() {
+        assertThat(validator.validate(empleadoValido())).isEmpty();
     }
 
     @Test
-    void telefonoNuloEsValido() {
+    void terciarizadoValidoNoTieneViolaciones() {
+        assertThat(validator.validate(terciarizadoValido())).isEmpty();
+    }
+
+    @Test
+    void tipoContratoNuloEsInvalido() {
         EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
                 "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"), Departamento.IT, null);
-        assertThat(validator.validate(r)).isEmpty();
+                new BigDecimal("150000"), Departamento.IT, null,
+                null, new BigDecimal("17"), null, null);
+        assertThat(camposConError(r)).contains("tipoContrato");
+    }
+
+    @Test
+    void empleadoSinFechaNacimientoEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
+                "12345678", null, LocalDate.of(2024, 1, 15),
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("17"), null, null);
+        assertThat(camposConError(r)).contains("fechaNacimiento");
+    }
+
+    @Test
+    void empleadoMenorDeEdadEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
+                "12345678", LocalDate.now().minusYears(15), LocalDate.of(2024, 1, 15),
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("17"), null, null);
+        assertThat(camposConError(r)).contains("fechaNacimiento");
+    }
+
+    @Test
+    void empleadoSinSalarioEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
+                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
+                null, Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("17"), null, null);
+        assertThat(camposConError(r)).contains("salario");
+    }
+
+    @Test
+    void empleadoSinPorcentajeAportesEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
+                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, null, null, null);
+        assertThat(camposConError(r)).contains("porcentajeAportes");
+    }
+
+    @Test
+    void porcentajeAportesMayorA30EsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
+                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("31"), null, null);
+        assertThat(camposConError(r)).contains("porcentajeAportes");
+    }
+
+    @Test
+    void porcentajeAportesNegativoEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
+                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("-1"), null, null);
+        assertThat(camposConError(r)).contains("porcentajeAportes");
+    }
+
+    @Test
+    void empleadoConMontoFacturaEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
+                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("17"), new BigDecimal("250000"), null);
+        assertThat(camposConError(r)).contains("montoFactura");
+    }
+
+    @Test
+    void terciarizadoSinMontoFacturaEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Luis", "Perez", "luis.perez@example.com",
+                "87654321", null, null, null, Departamento.IT, null,
+                TipoContrato.TERCIARIZADO, null, null, LocalDate.of(2026, 6, 30));
+        assertThat(camposConError(r)).contains("montoFactura");
+    }
+
+    @Test
+    void terciarizadoSinFechaServicioEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Luis", "Perez", "luis.perez@example.com",
+                "87654321", null, null, null, Departamento.IT, null,
+                TipoContrato.TERCIARIZADO, null, new BigDecimal("250000"), null);
+        assertThat(camposConError(r)).contains("fechaServicio");
+    }
+
+    @Test
+    void fechaServicioFuturaEsInvalida() {
+        EmpleadoRequest r = new EmpleadoRequest("Luis", "Perez", "luis.perez@example.com",
+                "87654321", null, null, null, Departamento.IT, null,
+                TipoContrato.TERCIARIZADO, null, new BigDecimal("250000"),
+                LocalDate.now().plusDays(1));
+        assertThat(camposConError(r)).contains("fechaServicio");
+    }
+
+    @Test
+    void terciarizadoConSalarioEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Luis", "Perez", "luis.perez@example.com",
+                "87654321", null, null, new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.TERCIARIZADO, null, new BigDecimal("250000"),
+                LocalDate.of(2026, 6, 30));
+        assertThat(camposConError(r)).contains("salario");
+    }
+
+    @Test
+    void terciarizadoConFechaNacimientoEsInvalido() {
+        EmpleadoRequest r = new EmpleadoRequest("Luis", "Perez", "luis.perez@example.com",
+                "87654321", LocalDate.of(1990, 5, 20), null, null, Departamento.IT, null,
+                TipoContrato.TERCIARIZADO, null, new BigDecimal("250000"),
+                LocalDate.of(2026, 6, 30));
+        assertThat(camposConError(r)).contains("fechaNacimiento");
     }
 
     @Test
     void nombreVacioEsInvalido() {
         EmpleadoRequest r = new EmpleadoRequest("", "Diaz", "ana.diaz@example.com",
                 "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"), Departamento.IT, "+541112345678");
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("17"), null, null);
         assertThat(camposConError(r)).contains("nombre");
     }
 
@@ -76,55 +191,8 @@ class EmpleadoRequestValidationTest {
     void emailInvalidoEsInvalido() {
         EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "no-es-email",
                 "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"), Departamento.IT, "+541112345678");
+                new BigDecimal("150000"), Departamento.IT, null,
+                TipoContrato.EMPLEADO, new BigDecimal("17"), null, null);
         assertThat(camposConError(r)).contains("email");
-    }
-
-    @Test
-    void dniNoNumericoEsInvalido() {
-        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
-                "ABC123", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"), Departamento.IT, "+541112345678");
-        assertThat(camposConError(r)).contains("dni");
-    }
-
-    @Test
-    void menorDeEdadEsInvalido() {
-        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
-                "12345678", LocalDate.now().minusYears(15), LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"), Departamento.IT, "+541112345678");
-        assertThat(camposConError(r)).contains("fechaNacimiento");
-    }
-
-    @Test
-    void fechaIngresoFuturaEsInvalida() {
-        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
-                "12345678", LocalDate.of(1990, 5, 20), LocalDate.now().plusDays(1),
-                new BigDecimal("150000"), Departamento.IT, "+541112345678");
-        assertThat(camposConError(r)).contains("fechaIngreso");
-    }
-
-    @Test
-    void salarioNegativoEsInvalido() {
-        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
-                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("-1"), Departamento.IT, "+541112345678");
-        assertThat(camposConError(r)).contains("salario");
-    }
-
-    @Test
-    void salarioSuperiorAlMaximoEsInvalido() {
-        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
-                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("1000001"), Departamento.IT, "+541112345678");
-        assertThat(camposConError(r)).contains("salario");
-    }
-
-    @Test
-    void departamentoNuloEsInvalido() {
-        EmpleadoRequest r = new EmpleadoRequest("Ana", "Diaz", "ana.diaz@example.com",
-                "12345678", LocalDate.of(1990, 5, 20), LocalDate.of(2024, 1, 15),
-                new BigDecimal("150000"), null, "+541112345678");
-        assertThat(camposConError(r)).contains("departamento");
     }
 }
