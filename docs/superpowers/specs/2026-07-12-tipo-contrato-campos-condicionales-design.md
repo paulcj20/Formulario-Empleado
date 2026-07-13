@@ -31,7 +31,7 @@ Discriminante: `tipoContrato` (`EMPLEADO` | `TERCIARIZADO`).
 | fechaNacimiento | obligatoria, mayor de 18 años |
 | fechaIngreso | obligatoria, no futura |
 | salario | obligatorio, positivo, ≤ 1.000.000 |
-| porcentajeAportes (nuevo) | obligatorio, número entre 0 y 100 (ambos inclusive) |
+| porcentajeAportes (nuevo) | obligatorio, número entre 0 y 30 (ambos inclusive) |
 
 **Solo TERCIARIZADO:**
 
@@ -71,7 +71,7 @@ con 400 un request que traiga campos del tipo contrario.
 - **Validador class-level `@ConsistenteConTipoContrato`** (mismo patrón que
   `@MayorDeEdad`):
   - EMPLEADO: exige fechaNacimiento (mayor de 18), fechaIngreso (no futura),
-    salario (positivo ≤ 1.000.000) y porcentajeAportes (0–100); rechaza
+    salario (positivo ≤ 1.000.000) y porcentajeAportes (0–30); rechaza
     montoFactura y fechaServicio si vienen presentes.
   - TERCIARIZADO: exige montoFactura (positivo ≤ 1.000.000) y fechaServicio
     (no futura); rechaza fechaNacimiento, fechaIngreso, salario y
