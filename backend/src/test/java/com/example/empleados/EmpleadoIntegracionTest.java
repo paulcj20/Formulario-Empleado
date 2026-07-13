@@ -54,8 +54,8 @@ class EmpleadoIntegracionTest {
     @Test
     void altaValidaPersisteYDevuelve201() throws Exception {
         mockMvc.perform(post("/api/empleados")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpo("ana.diaz@example.com", "12345678")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo("ana.diaz@example.com", "12345678")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.activo").value(true));
@@ -75,8 +75,8 @@ class EmpleadoIntegracionTest {
                 "departamento", "IT"));
 
         mockMvc.perform(post("/api/empleados")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalido))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalido))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors").exists());
     }
@@ -84,13 +84,13 @@ class EmpleadoIntegracionTest {
     @Test
     void emailDuplicadoDevuelve409() throws Exception {
         mockMvc.perform(post("/api/empleados")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpo("ana.diaz@example.com", "12345678")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo("ana.diaz@example.com", "12345678")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/empleados")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpo("ana.diaz@example.com", "87654321")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo("ana.diaz@example.com", "87654321")))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errors.email").value("Ya existe un empleado con ese email"));
     }
@@ -111,9 +111,9 @@ class EmpleadoIntegracionTest {
     @Test
     void altaTerciarizadoValidaDevuelve201() throws Exception {
         mockMvc.perform(post("/api/empleados")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                cuerpoTerciarizado("luis.perez@example.com", "87654321"))))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(
+                        cuerpoTerciarizado("luis.perez@example.com", "87654321"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.tipoContrato").value("TERCIARIZADO"))
@@ -129,8 +129,8 @@ class EmpleadoIntegracionTest {
         body.put("salario", 150000);
 
         mockMvc.perform(post("/api/empleados")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.salario")
                         .value("El salario no corresponde a un terciarizado"));

@@ -8,6 +8,8 @@ import { altaEmpleado } from '../services/empleadoService';
 import DatosPersonalesStep from './steps/DatosPersonalesStep';
 import ContactoStep from './steps/ContactoStep';
 import DatosLaboralesStep from './steps/DatosLaboralesStep';
+import SelectField from './fields/SelectField';
+import { TIPOS_CONTRATO } from '../schemas/empleadoSchema';
 
 const valoresIniciales = {
   nombre: '',
@@ -62,6 +64,15 @@ export default function EmpleadoForm({ onExito }) {
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)}>
         {errorGeneral && <Alert variant="danger">{errorGeneral}</Alert>}
+
+        <h5 className="mb-3">Tipo de contrato</h5>
+        <SelectField
+          label="Tipo de contrato"
+          name="tipoContrato"
+          register={methods.register}
+          error={methods.formState.errors.tipoContrato}
+          options={TIPOS_CONTRATO}
+        />
 
         <h5 className="mb-3">Datos personales</h5>
         <DatosPersonalesStep mostrarFechaNacimiento={tipoContrato === 'EMPLEADO'} />

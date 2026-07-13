@@ -2,7 +2,7 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import TextField from '../fields/TextField';
 import SelectField from '../fields/SelectField';
-import { DEPARTAMENTOS, TIPOS_CONTRATO } from '../../schemas/empleadoSchema';
+import { DEPARTAMENTOS } from '../../schemas/empleadoSchema';
 
 export default function DatosLaboralesStep({ tipoContrato }) {
   const {
@@ -12,13 +12,6 @@ export default function DatosLaboralesStep({ tipoContrato }) {
 
   return (
     <div>
-      <SelectField
-        label="Tipo de contrato"
-        name="tipoContrato"
-        register={register}
-        error={errors.tipoContrato}
-        options={TIPOS_CONTRATO}
-      />
       <SelectField
         label="Departamento"
         name="departamento"
