@@ -1,0 +1,103 @@
+name: E2E Tests
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Backend (Spring Boot) ─────────────────────────
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Compilar y levantar backend
+        working-directory: backend
+        env:
+          # H2 en memoria en modo compatible con Postgres (sin DB externa)
+          SPRING_DATASOURCE_URL: "jdbc:h2:mem:empleados;DB_CLOSE_DELAY=-1;MODE=PostgreSQL"
+          SPRING_DATASOURCE_USERNAME: sa
+          SPRING_DATASOURCE_PASSWORD: ""
+        run: |
+          ./mvnw -q -DskipTests package
+          java -jar target/*.jar &
+          npx --yes wait-on tcp:8080 --timeout 90000
+
+      # ── Frontend + Playwright ─────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar navegador
+        run: npx playwright install --with-deps chromium
+
+      - name: Correr tests E2E
+        run: npx playwright test --project=chromium
+
+      # ── Reporte HTML (siempre, falle o no) ────────────
+      - name: Subir reporte de Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 15
+
+      # ── Subir resultados a Kiwi TCMS (siempre) ────────
+      - uses: actions/setup-python@v5
+        if: always()
+        with:
+          python-version: "3.12"
+
+      - name: Reportar a Kiwi TCMS
+        if: always()
+        env:
+          TCMS_PRODUCT: "Formulario de Alta Empleado / Servicio"
+          TCMS_PRODUCT_VERSION: "1.0"
+          TCMS_PLAN_ID: "1"
+          TCMS_BUILD: "gh-${{ github.run_number }}-${{ github.sha }}"
+        run: |
+          pip install kiwitcms-junit.xml-plugin
+          cat > ~/.tcms.conf <<EOF
+          [tcms]
+          url = https://kimitcms.duckdns.org/json-rpc/
+          username = ${{ secrets.TCMS_USERNAME }}
+          password = ${{ secrets.TCMS_PASSWORD }}
+          EOF
+          python subir_kiwi.py results/junit.xml
+
+      # ── Comentar en el PR si fallo ────────────────────
+      - name: Comentar en el PR
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '❌ **Los tests E2E fallaron.**',
+                '',
+                `📊 [Ver la corrida](${runUrl}) — descargá el artifact \`playwright-report\` y abrí \`index.html\` para ver screenshots, video y trace del fallo.`,
+                '',
+                '🥝 Resultados también registrados en [Kiwi TCMS](https://kimitcms.duckdns.org).'
+              ].join('\n')
+            });
