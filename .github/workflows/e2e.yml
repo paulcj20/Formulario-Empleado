@@ -50,7 +50,7 @@ jobs:
       - name: Correr tests E2E
         run: npx playwright test --project=chromium
 
-      # ── Reporte HTML (siempre, falle o no) ────────────
+      # ── Reporte HTML (siempre, falle o no) 
       - name: Subir reporte de Playwright
         if: always()
         uses: actions/upload-artifact@v4
