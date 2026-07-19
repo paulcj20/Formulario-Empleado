@@ -14,7 +14,7 @@ $env:TCMS_BUILD = "local-" + (Get-Date -Format "yyyyMMdd-HHmmss")
 # Los Test Runs nuevos se crearan dentro de este plan.
 $env:TCMS_PLAN_ID = "1"
 
-# 1) Correr los tests (solo chromium para no triplicar resultados en Kiwi)
+# 1) Correr los tests (solo chromium)
 npx playwright test --project=chromium
 
 # 2) Subir el junit.xml a Kiwi
