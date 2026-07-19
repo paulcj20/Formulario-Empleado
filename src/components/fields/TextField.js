@@ -10,3 +10,4 @@ export default function TextField({ label, name, register, error, type = 'text',
     </Form.Group>
   );
 }
+ 
