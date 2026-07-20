@@ -39,21 +39,36 @@ backend = plugin.backend
 rpc = backend.rpc
 test_results = pathlib.Path(__file__).parent / "test-results"
 
-if test_results.is_dir():
-    executions = rpc.TestExecution.filter({"run": backend.run_id})
-    for execution in executions:
-        case = rpc.TestCase.filter({"pk": execution["case"]})[0]
-        case_key = _norm(case["summary"])
+print(f"[adjuntos] Buscando screenshots en: {test_results}")
+if not test_results.is_dir():
+    print("[adjuntos] No existe la carpeta test-results (no hubo fallos o no se corrieron tests)")
+else:
+    folders = [f for f in test_results.iterdir() if f.is_dir()]
+    print(f"[adjuntos] Carpetas de fallos encontradas: {[f.name for f in folders]}")
 
-        # Playwright crea una carpeta por test fallido, con el titulo slugificado
-        for folder in test_results.iterdir():
-            if not folder.is_dir() or case_key not in _norm(folder.name):
-                continue
-            for image in sorted(folder.glob("*.png")):
-                content = base64.b64encode(image.read_bytes()).decode()
-                rpc.TestExecution.add_attachment(
-                    execution["id"], f"{folder.name}-{image.name}", content
-                )
-                print(f"Adjuntado {image.name} -> TE-{execution['id']}")
+    executions = rpc.TestExecution.filter({"run": backend.run_id})
+    print(f"[adjuntos] Ejecuciones en TR-{backend.run_id}: {len(executions)}")
+
+    for execution in executions:
+        try:
+            case = rpc.TestCase.filter({"pk": execution["case"]})[0]
+            case_key = _norm(case["summary"])
+            print(f"[adjuntos] TE-{execution['id']} caso='{case['summary']}'")
+
+            # Playwright crea una carpeta por test fallido, con el titulo slugificado
+            for folder in folders:
+                if case_key not in _norm(folder.name):
+                    continue
+                images = sorted(folder.glob("*.png"))
+                if not images:
+                    print(f"[adjuntos]   {folder.name}: sin .png")
+                for image in images:
+                    content = base64.b64encode(image.read_bytes()).decode()
+                    rpc.TestExecution.add_attachment(
+                        execution["id"], f"{folder.name}-{image.name}", content
+                    )
+                    print(f"[adjuntos]   Adjuntado {image.name} -> TE-{execution['id']}")
+        except Exception as error:  # noqa: BLE001
+            print(f"[adjuntos] ERROR en TE-{execution.get('id')}: {error!r}")
 
 print("Subida a Kiwi completada.")

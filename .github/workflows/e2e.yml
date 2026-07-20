@@ -11,7 +11,11 @@ permissions:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +37,7 @@ jobs:
         run: |
           ./mvnw -q -DskipTests package
           java -jar target/*.jar &
+          echo $! > backend.pid
           npx --yes wait-on tcp:8080 --timeout 90000
 
       # ── Frontend + Playwright ─────────────────────────
@@ -81,6 +86,16 @@ jobs:
           password = ${{ secrets.TCMS_PASSWORD }}
           EOF
           python subir_kiwi.py results/junit.xml
+
+      # ── Apagar el backend (en runner local no muere solo) ──
+      - name: Detener backend
+        if: always()
+        working-directory: backend
+        run: |
+          if [ -f backend.pid ]; then
+            kill "$(cat backend.pid)" 2>/dev/null || true
+            rm backend.pid
+          fi
 
       # ── Comentar en el PR si fallo ────────────────────
       - name: Comentar en el PR
