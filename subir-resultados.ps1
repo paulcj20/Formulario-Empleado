@@ -11,7 +11,7 @@ $env:TCMS_PRODUCT_VERSION = "1.0"
 $env:TCMS_BUILD = "local-" + (Get-Date -Format "yyyyMMdd-HHmmss")
 
 # ID de TU Test Plan en Kiwi (el numero que aparece en la URL del plan, ej. /plan/1/... -> 1)
-# Los Test Runs nuevos se crearan dentro de este plan....
+# Los Test Runs nuevos se crearan dentro de este plan.
 $env:TCMS_PLAN_ID = "1"
 
 # 1) Correr los tests (solo chromium)
