@@ -15,7 +15,7 @@ jobs:
 
     defaults:
       run:
-        shell: bash
+        shell: powershell
 
     steps:
       - uses: actions/checkout@v4
@@ -35,9 +35,10 @@ jobs:
           SPRING_DATASOURCE_USERNAME: sa
           SPRING_DATASOURCE_PASSWORD: ""
         run: |
-          ./mvnw -q -DskipTests package
-          java -jar target/*.jar &
-          echo $! > backend.pid
+          .\mvnw.cmd -q -DskipTests package
+          $jar = (Get-Item target\*.jar | Select-Object -First 1).FullName
+          $proc = Start-Process java -ArgumentList "-jar", $jar -PassThru -WindowStyle Hidden
+          $proc.Id | Out-File backend.pid
           npx --yes wait-on tcp:8080 --timeout 90000
 
       # ── Frontend + Playwright ─────────────────────────
@@ -79,12 +80,13 @@ jobs:
           TCMS_BUILD: "gh-${{ github.run_number }}-${{ github.sha }}"
         run: |
           pip install kiwitcms-junit.xml-plugin
-          cat > ~/.tcms.conf <<EOF
+          $env:HOME = $env:USERPROFILE
+          @"
           [tcms]
           url = https://kimitcms.duckdns.org/json-rpc/
           username = ${{ secrets.TCMS_USERNAME }}
           password = ${{ secrets.TCMS_PASSWORD }}
-          EOF
+          "@ | Set-Content "$env:USERPROFILE\.tcms.conf"
           python subir_kiwi.py results/junit.xml
 
       # ── Apagar el backend (en runner local no muere solo) ──
@@ -92,10 +94,10 @@ jobs:
         if: always()
         working-directory: backend
         run: |
-          if [ -f backend.pid ]; then
-            kill "$(cat backend.pid)" 2>/dev/null || true
-            rm backend.pid
-          fi
+          if (Test-Path backend.pid) {
+            Stop-Process -Id (Get-Content backend.pid) -Force -ErrorAction SilentlyContinue
+            Remove-Item backend.pid
+          }
 
       # ── Comentar en el PR si fallo ────────────────────
       - name: Comentar en el PR
