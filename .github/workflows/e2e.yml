@@ -15,7 +15,10 @@ jobs:
 
     defaults:
       run:
-        shell: powershell
+        # El runner (servicio "Servicio de red") no tiene una execution policy
+        # asignada -> por defecto Restricted y bloquea cualquier script .ps1.
+        # Bypass es solo para el proceso que ejecuta cada step, no cambia nada global.
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -Command ". '{0}'"
 
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +28,8 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-          cache: maven
+          # Sin cache: el runner es persistente y ~/.m2 ya sobrevive entre corridas;
+          # actions/cache solo suma una vuelta de red innecesaria en self-hosted.
 
       - name: Compilar y levantar backend
         working-directory: backend
@@ -35,6 +39,13 @@ jobs:
           SPRING_DATASOURCE_USERNAME: sa
           SPRING_DATASOURCE_PASSWORD: ""
         run: |
+          # El runner es la misma máquina siempre: si una corrida anterior murió
+          # sin llegar al paso de limpieza, puede quedar un backend viejo colgado del 8080.
+          $stale = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue
+          if ($stale) {
+            $stale.OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+          }
+
           .\mvnw.cmd -q -DskipTests package
           $jar = (Get-Item target\*.jar | Select-Object -First 1).FullName
           $proc = Start-Process java -ArgumentList "-jar", $jar -PassThru -WindowStyle Hidden
@@ -45,13 +56,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
+          # Idem: sin cache de actions/cache, el cache local de npm ya persiste en el runner.
 
       - name: Instalar dependencias
         run: npm ci
 
       - name: Instalar navegador
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Correr tests E2E
         run: npx playwright test --project=chromium
@@ -66,11 +77,8 @@ jobs:
           retention-days: 15
 
       # ── Subir resultados a Kiwi TCMS (siempre) ────────
-      - uses: actions/setup-python@v5
-        if: always()
-        with:
-          python-version: "3.12"
-
+      # Python ya está instalado en el runner (máquina persistente);
+      # actions/setup-python intentaba descargarlo y fallaba por la execution policy.
       - name: Reportar a Kiwi TCMS
         if: always()
         env:
