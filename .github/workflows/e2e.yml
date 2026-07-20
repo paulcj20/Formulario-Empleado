@@ -78,6 +78,17 @@ jobs:
           path: playwright-report/
           retention-days: 15
 
+      # Caddy ya sirve F:\Automations Data\playwright-reports en
+      # kimitcms.duckdns.org/playwright-reports/ (mismo PC que el runner).
+      - name: Publicar reporte HTML (para Kiwi)
+        if: always()
+        id: publicar_reporte
+        run: |
+          $dest = "F:\Automations Data\playwright-reports\${{ github.run_id }}"
+          New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          Copy-Item -Path playwright-report\* -Destination $dest -Recurse -Force
+          "url=https://kimitcms.duckdns.org/playwright-reports/${{ github.run_id }}/index.html" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       # ── Subir resultados a Kiwi TCMS (siempre) ────────
       # Python ya está instalado en el runner (máquina persistente);
       # actions/setup-python intentaba descargarlo y fallaba por la execution policy.
@@ -88,6 +99,7 @@ jobs:
           TCMS_PRODUCT_VERSION: "1.0"
           TCMS_PLAN_ID: "1"
           TCMS_BUILD: "gh-${{ github.run_number }}-${{ github.sha }}"
+          REPORT_URL: ${{ steps.publicar_reporte.outputs.url }}
         run: |
           pip install kiwitcms-junit.xml-plugin
           $env:HOME = $env:USERPROFILE

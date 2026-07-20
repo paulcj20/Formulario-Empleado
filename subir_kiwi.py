@@ -4,6 +4,7 @@
 # - Usa solo el titulo del test como summary para matchear con el caso en Kiwi
 # - Adjunta los screenshots de Playwright a las ejecuciones que fallaron
 import base64
+import os
 import pathlib
 import re
 import ssl
@@ -28,6 +29,14 @@ Plugin.parse_timestamp = _parse_timestamp
 
 plugin = Plugin(verbose=True, summary_template="${name}")
 plugin.parse(sys.argv[1:])
+
+# ── Enlazar el reporte HTML de Playwright en las notas del TestRun ──
+report_url = os.environ.get("REPORT_URL")
+if report_url:
+    plugin.backend.rpc.TestRun.update(
+        plugin.backend.run_id, {"notes": f"Reporte Playwright: {report_url}"}
+    )
+    print(f"[reporte] Enlazado en TR-{plugin.backend.run_id}: {report_url}")
 
 
 # ── Adjuntar screenshots de fallos ───────────────────────────────
