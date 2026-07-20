@@ -55,7 +55,9 @@ jobs:
       # ── Frontend + Playwright ─────────────────────────
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # Debe coincidir con el Node/npm local que generó package-lock.json
+          # (v24); con v20 "npm ci" resolvía distinto y fallaba con EUSAGE.
+          node-version: "24"
           # Idem: sin cache de actions/cache, el cache local de npm ya persiste en el runner.
 
       - name: Instalar dependencias
@@ -92,8 +94,8 @@ jobs:
           @"
           [tcms]
           url = https://kimitcms.duckdns.org/json-rpc/
-          username = ${{ secrets.TCMS_USERNAME }}
-          password = ${{ secrets.TCMS_PASSWORD }}
+          username = PAULCJ20
+          password = ${{ secrets.PAULCJ20 }}
           "@ | Set-Content "$env:USERPROFILE\.tcms.conf"
           python subir_kiwi.py results/junit.xml
 
